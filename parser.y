@@ -84,7 +84,6 @@ void printError(int code){
 		case 3	:	printf("Use of undefined variable\n");
 					break;
 
-		default	:	printf("Unknown error\n");
-		
+		default	:	printf("Invalid symbol\n");
 	}
 }
