@@ -1,15 +1,31 @@
-program-> PROG declarations BEGIN command_sequence END
-declarations -> expression |INTEGER id_seq IDENTIFIER.
-id_seq → expression | id_seq IDENTIFIER,
-command_sequence ->expression | command_sequence command ;
-command -> expression | IDENTIFIER : = expression | IF expression THEN command_sequence ELSE command_sequence ENDIF | WHILE expression DO command_sequence ENDWHILE | READ IDENTIFIER | WRITE expression
-expression -> NUMBER | IDENTIFIER | ( expression ) | expression + expression | expression * expression | expression - expression | expression / expression | expression = expression | expression < expression | expression > expression 
+program         → PROG declarations BEGIN command_sequence END
+declarations    → ɛ 
+                   |INTEGER id_seq IDENTIFIER .
+id_seq          → ɛ 
+                   | id_seq IDENTIFIER ,
+command_sequence→ ɛ 
+                   | command_sequence command ;
+command         → ɛ 
+                   | IDENTIFIER := expression 
+                   | IF expression THEN command_sequence ELSE command_sequence ENDIF 
+                   | WHILE expression DO command_sequence ENDWHILE 
+                   | READ IDENTIFIER 
+                   | WRITE expression
+expression      → NUMBER | IDENTIFIER 
+                   | ( expression ) 
+                   | expression + expression 
+                   | expression * expression 
+                   | expression - expression 
+                   | expression / expression 
+                   | expression = expression 
+                   | expression < expression 
+                   | expression > expression 
 
 where the non-terminal symbols are given in all lowercase and
  the terminal symbols are given in all caps or as literal symbols. 
 
 The start symbol is 'program'. 
 
-There are two context sensitive requirements for the language, 
+There are two context sensitive requirements for the language :
     - variables must be declared before they are referenced and
     - a variable may be declared only once.
