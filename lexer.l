@@ -54,8 +54,16 @@
 ">"			{return '>';}
 "("			{return '(';}
 ")"			{return ')';}
-[a-zA-Z][a-zA-Z0-9_]* {strcpy(lastID,yytext); return IDENTIFIER;}
-[0-9]+		{return NUMBER;}
+[a-zA-Z][a-zA-Z0-9_]* 		{
+								strcpy(lastID,yytext);
+								
+								struct sym_rec *p = get_symbol(yytext);
+								if(p != 0)
+									yylval = (p->data_offset)/4;	
+																
+								return IDENTIFIER;
+							}
+[0-9]+		{yylval = atoi(yytext); return NUMBER;}
 .			{;}
 
 %%
