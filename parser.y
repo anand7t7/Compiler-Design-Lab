@@ -5,6 +5,7 @@
 	void yyerror(int code);
 	void printError(int code);
 	void write_machine_code();
+	void write_machine_code_to_file(const char*);
 	extern int input_line_no;
 	void context_check(char *name);
 	void install(char *name);
@@ -190,6 +191,8 @@ void main()
 		
 		printSymbolTable();
 		write_machine_code();
+		write_machine_code_to_file("machine_code");
+
 }
 void yyerror(int code)
 {
@@ -231,6 +234,15 @@ void write_machine_code(){
 
 		printf("%c",machine_code[i]);
 	}
+}
+
+void write_machine_code_to_file(const char* filename){
+
+	FILE *output = fopen(filename , "w");
+
+	fprintf(output , "%s", machine_code);
+
+	fclose(output);
 }
 
 void push(int pos){
