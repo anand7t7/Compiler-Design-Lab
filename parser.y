@@ -5,7 +5,7 @@
 	void yyerror(int code);
 	void printError(int code);
 	void write_machine_code();
-	extern int line_no;
+	extern int input_line_no;
 	void context_check(char *name);
 	void install(char *name);
 	void printSymbolTable();
@@ -16,6 +16,7 @@
 
 	char machine_code[1000];
 	int  pos = 0;
+	int output_line_no = 1;
 
 	struct stack_node{
 
@@ -23,10 +24,11 @@
 		struct stack_node* next;
 	};
 
-	stack_node *stack_top = 0;
+	struct stack_node *stack_top = 0;
 
 	void push(int pos);
 	int  pop();
+	void replace(char str[], int pos , int n);
 
 
 %}
@@ -42,8 +44,14 @@
 %%
 
 program 	
-	: PROG declarations 	{pos += sprintf( machine_code+pos , "res\t\t%d\n" , data_offset/4);} 
-	  BEG command_sequence END {pos += sprintf(machine_code+pos , "halt\t\t0\n");}
+	: PROG declarations 		{
+									pos += sprintf( machine_code+pos , "res\t\t%d\n" , data_offset/4);
+									output_line_no++;
+								} 
+	  BEG command_sequence END  {
+		  							pos += sprintf(machine_code+pos , "halt\t\t0\n");
+									output_line_no++;
+								}
 	;
 declarations
 	:  
@@ -63,22 +71,39 @@ command
 	:  
 	| IDENTIFIER ASSIGN expression 	{
 										context_check(lastID);
-
-										pos += sprintf(machine_code+pos , "store\t\t%d\n" , $3);
+										
+										pos += sprintf(machine_code+pos , "store\t\t%d\n" , $1);
+										output_line_no++;
 									}
 	| IF expression THEN 			{
-										pos += sprintf(machine_code+pos , "jmp_false\tL1\n");
+										push(pos + 11);
+										pos += sprintf(machine_code+pos , "jmp_false\t\t000\n");
+										output_line_no++;
 									}
 	 command_sequence				{
-										pos += sprintf(machine_code+pos , "goto\t\tL2\n");
+		 								replace(machine_code , pop() , output_line_no+1);
+										push(pos + 6);
+										pos += sprintf(machine_code+pos , "goto\t\t000\n");
+										output_line_no++;
 									} 
-	 ELSE command_sequence ENDIF 
-
-	| WHILE expression DO			{
-										pos += sprintf(machine_code+pos , "jmp_false\tL2\n");
+	 ELSE command_sequence ENDIF	{
+		 								replace(machine_code , pop() , output_line_no);
 									}
-	 command_sequence				{
-		 								pos += sprintf(machine_code+pos , "goto\t\tL1\n");
+
+	| WHILE 						{
+										push(output_line_no);
+									}
+	 expression DO					{	
+		 								push(pos + 11);
+										pos += sprintf(machine_code+pos , "jmp_false\t\t000\n");
+										output_line_no++;
+									}
+	 command_sequence				{	
+		 								int rep_pos = pop();
+		 								pos += sprintf(machine_code+pos , "goto\t\t%03d\n" , pop());
+										output_line_no++;
+
+										replace(machine_code , rep_pos , output_line_no);
 	 								} 
 	 
 	 ENDWHILE 
@@ -87,21 +112,25 @@ command
 										context_check(lastID);
 
 										pos += sprintf(machine_code+pos , "read\t\t%d\n" , $2);
+										output_line_no++;
 									}
 	| WRITE expression 				{
 										pos += sprintf(machine_code+pos , "write\t\t0\n");
+										output_line_no++;
 									}
 	;
 expression
 	: NUMBER		{
-						pos += sprintf(machine_code+pos , "load_int\t%d\n" , $1);
+						pos += sprintf(machine_code+pos , "load_int\t\t%d\n" , $1);
+						output_line_no++;
 
 						$$ = $1;
 					}
 	| IDENTIFIER 	{
 						context_check(lastID);
 
-						pos += sprintf(machine_code+pos , "load_var\t%d\n" , $1);
+						pos += sprintf(machine_code+pos , "load_var\t\t%d\n" , $1);
+						output_line_no++;
 
 						$$ = $1;
 						
@@ -115,30 +144,37 @@ expression
 	| expression '+' expression	{
 
 									pos += sprintf(machine_code+pos , "add\t\t0\n");
+									output_line_no++;
 								} 	
 	| expression '*' expression {
 
 									pos += sprintf(machine_code+pos , "mul\t\t0\n");
+									output_line_no++;
 								}
 	| expression '-' expression {
 
 									pos += sprintf(machine_code+pos , "sub\t\t0\n");
+									output_line_no++;
 								}
 	| expression '/' expression {
 
 									pos += sprintf(machine_code+pos , "div\t\t0\n");
+									output_line_no++;
 								}
 	| expression '=' expression {
 
 									pos += sprintf(machine_code+pos , "eq\t\t0\n");
+									output_line_no++;
 								}
 	| expression '<' expression {
 
 									pos += sprintf(machine_code+pos , "lt\t\t0\n");
+									output_line_no++;
 								}
 	| expression '>' expression {
 
 									pos += sprintf(machine_code+pos , "gt\t\t0\n");
+									output_line_no++;
 								}
 	;
 
@@ -157,7 +193,7 @@ void main()
 }
 void yyerror(int code)
 {
-	printf("error %d at line no %d \n" , code , line_no);
+	printf("error %d at line no %d \n" , code , input_line_no);
 	printError(code);
 	exit(0);
 }
@@ -180,7 +216,21 @@ void printError(int code){
 
 void write_machine_code(){
 
-	printf("\nStack Machine Code : \n\n%s\n" , machine_code);
+	int line_no = 0;
+
+	printf("\nStack Machine Code : \n\n" );
+
+	for(int i = 0 ; machine_code[i] != '\0' ; i++){
+
+		if(i == 0 || machine_code[i-1] == '\n'){
+
+			line_no++;
+
+			printf("%03d : ", line_no);
+		}
+
+		printf("%c",machine_code[i]);
+	}
 }
 
 void push(int pos){
@@ -205,4 +255,11 @@ int pop(){
 	free(node);
 
 	return pos;
+}
+
+void replace(char str[] , int pos , int n){
+
+	str[pos]   = n/100 + '0';
+	str[pos+1] = (n%100) / 10 + '0';
+	str[pos+2] = (n%10) + '0';
 }
