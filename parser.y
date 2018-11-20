@@ -15,6 +15,8 @@
 %start program
 %token PROG BEG END INTEGER IDENTIFIER IF THEN ELSE ENDIF WHILE DO ENDWHILE READ WRITE NUMBER ASSIGN DOT COMMA SEMI_COLON
 
+%right '='
+%left '<' '>'
 %left '+' '-'
 %left '/' '*'
 
