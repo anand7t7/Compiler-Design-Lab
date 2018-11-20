@@ -2,7 +2,7 @@
 	#include "y.tab.h"
 	#include<string.h>
 
-	int line_no = 1;
+	int input_line_no = 1;
 	int data_offset = 0;
 	char lastID[100];
 
@@ -26,7 +26,7 @@
 
 
 %%
-[\n]		{line_no++;}
+[\n]		{input_line_no++;}
 [\t\s]		{;}
 "prog"		{return PROG;}
 "begin"		{return BEG;}
@@ -60,7 +60,7 @@
 								struct sym_rec *p = get_symbol(yytext);
 								if(p != 0)
 									yylval = (p->data_offset)/4;	
-																
+
 								return IDENTIFIER;
 							}
 [0-9]+		{yylval = atoi(yytext); return NUMBER;}
